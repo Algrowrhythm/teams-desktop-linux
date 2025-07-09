@@ -140,15 +140,16 @@ build_appimage() {
     
     local appimage_dir="$BUILD_DIR/appimage"
     local appdir="$appimage_dir/AppDir"
-    
-    # Create AppDir structure
+
+    # Ensure necessary directories exist
     mkdir -p "$appdir"/{usr/bin,usr/share/applications,usr/share/pixmaps}
-    
-    # Copy files
+    mkdir -p "$appimage_dir"
+
+    # Copy binary and icon
     cp "$SRC_DIR/teams-desktop-linux" "$appdir/usr/bin/"
     cp "$ASSETS_DIR/icons/teams-desktop-linux.png" "$appdir/usr/share/pixmaps/"
-    
-    # Create desktop file
+
+    # Create .desktop file
     cat > "$appdir/usr/share/applications/teams-desktop-linux.desktop" << 'EOF'
 [Desktop Entry]
 Name=Teams Desktop Linux
@@ -163,7 +164,7 @@ MimeType=x-scheme-handler/msteams;x-scheme-handler/ms-teams;
 StartupNotify=true
 Keywords=teams;microsoft;chat;video;collaboration;meeting;
 EOF
-    
+
     # Create AppRun
     cat > "$appdir/AppRun" << 'EOF'
 #!/bin/bash
@@ -172,35 +173,41 @@ HERE=${SELF%/*}
 export PATH="${HERE}/usr/bin/:${PATH}"
 exec "${HERE}/usr/bin/teams-desktop-linux" "$@"
 EOF
-    
-    # Set permissions
+
+    # Set executable permissions
     chmod +x "$appdir/AppRun"
     chmod +x "$appdir/usr/bin/teams-desktop-linux"
-    
-    # Copy icon to root (required for AppImage)
+
+    # Required files at AppDir root
     cp "$ASSETS_DIR/icons/teams-desktop-linux.png" "$appdir/"
-    
-    # Copy desktop file to root (required for AppImage)
     cp "$appdir/usr/share/applications/teams-desktop-linux.desktop" "$appdir/"
-    
-    # Download appimagetool if not available
-    if ! command -v appimagetool >/dev/null 2>&1; then
-        print_color "$YELLOW" "📥 Downloading appimagetool..."
-        wget -O "$appimage_dir/appimagetool" \
-            https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
-        chmod +x "$appimage_dir/appimagetool"
-        APPIMAGETOOL="$appimage_dir/appimagetool"
+
+    # Set path for appimagetool
+    local appimagetool_path="$appimage_dir/appimagetool"
+
+    # Download appimagetool if not installed system-wide
+    if command -v appimagetool >/dev/null 2>&1; then
+        APPIMAGETOOL="$(command -v appimagetool)"
     else
-        APPIMAGETOOL="appimagetool"
+        print_color "$YELLOW" "📥 Downloading appimagetool..."
+        wget -q -O "$appimagetool_path" \
+            https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
+        chmod +x "$appimagetool_path"
+        APPIMAGETOOL="$(readlink -f "$appimagetool_path")"
     fi
-    
+
+    # Resolve absolute paths
+    local APPDIR_ABS
+    APPDIR_ABS="$(readlink -f "$appdir")"
+    local OUTPUT_ABS
+    OUTPUT_ABS="$(readlink -f "$DIST_DIR")/$PROJECT_NAME-$VERSION.AppImage"
+
     # Build AppImage
-    cd "$appimage_dir"
-    ARCH=x86_64 "$APPIMAGETOOL" "$appdir" "../$DIST_DIR/$PROJECT_NAME-$VERSION.AppImage"
-    cd - > /dev/null
-    
+    ARCH=x86_64 "$APPIMAGETOOL" "$APPDIR_ABS" "$OUTPUT_ABS"
+
     print_color "$GREEN" "✅ AppImage built successfully!"
 }
+
 
 create_checksums() {
     print_header "Creating Checksums"

@@ -6,7 +6,7 @@
 set -e
 
 # Configuration
-readonly TEAMS_URL="https://teams.microsoft.com"
+readonly TEAMS_URL="https://teams.microsoft.com/v2/"
 readonly APP_NAME="Teams Desktop Linux"
 readonly APP_CLASS="teams-desktop-linux"
 readonly VERSION="1.0.0"
