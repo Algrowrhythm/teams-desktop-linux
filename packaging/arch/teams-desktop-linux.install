@@ -1,0 +1,77 @@
+# Arch Linux package install/upgrade/remove hooks
+
+post_install() {
+    echo
+    echo "==> Teams Desktop Linux has been installed successfully!"
+    echo
+    echo "    Launch from your applications menu or run:"
+    echo "    $ teams-desktop-linux"
+    echo
+    echo "    For help and options:"
+    echo "    $ teams-desktop-linux --help"
+    echo
+    echo "    To enable auto-start (optional):"
+    echo "    $ systemctl --user enable teams-desktop-linux.service"
+    echo
+    echo "    Report issues at:"
+    echo "    https://github.com/Algrowrhythm/teams-desktop-linux/issues"
+    echo
+    
+    # Update desktop database
+    update-desktop-database -q usr/share/applications
+    
+    # Update MIME database
+    update-mime-database usr/share/mime
+    
+    # Update icon cache
+    gtk-update-icon-cache -q -t -f usr/share/icons/hicolor
+    
+    # Register URL handlers
+    if command -v xdg-mime >/dev/null 2>&1; then
+        xdg-mime default teams-desktop-linux.desktop x-scheme-handler/msteams 2>/dev/null || true
+        xdg-mime default teams-desktop-linux.desktop x-scheme-handler/ms-teams 2>/dev/null || true
+    fi
+}
+
+post_upgrade() {
+    echo
+    echo "==> Teams Desktop Linux has been upgraded successfully!"
+    echo
+    echo "    If you experience any issues, try resetting the configuration:"
+    echo "    $ teams-desktop-linux --reset"
+    echo
+    
+    # Update databases
+    update-desktop-database -q usr/share/applications
+    update-mime-database usr/share/mime
+    gtk-update-icon-cache -q -t -f usr/share/icons/hicolor
+}
+
+pre_remove() {
+    # Stop systemd service if running
+    if systemctl --user is-active teams-desktop-linux.service >/dev/null 2>&1; then
+        systemctl --user stop teams-desktop-linux.service
+        systemctl --user disable teams-desktop-linux.service
+    fi
+}
+
+post_remove() {
+    echo
+    echo "==> Teams Desktop Linux has been removed."
+    echo
+    echo "    User data remains in ~/.local/share/teams-desktop-linux/"
+    echo "    Remove manually if desired:"
+    echo "    $ rm -rf ~/.local/share/teams-desktop-linux/"
+    echo
+    
+    # Update databases
+    update-desktop-database -q usr/share/applications
+    update-mime-database usr/share/mime
+    gtk-update-icon-cache -q -t -f usr/share/icons/hicolor
+    
+    # Clean up MIME associations
+    if command -v xdg-mime >/dev/null 2>&1; then
+        xdg-mime default '' x-scheme-handler/msteams 2>/dev/null || true
+        xdg-mime default '' x-scheme-handler/ms-teams 2>/dev/null || true
+    fi
+}

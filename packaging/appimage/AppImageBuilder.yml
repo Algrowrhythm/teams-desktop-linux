@@ -1,0 +1,318 @@
+version: 1
+
+AppDir:
+  path: ./AppDir
+  
+  app_info:
+    id: com.teamsdesktop.linux
+    name: Teams Desktop Linux
+    icon: teams-desktop-linux
+    version: 1.0.0
+    exec: usr/bin/teams-desktop-linux
+    exec_args: "$@"
+  
+  apt:
+    arch: amd64
+    sources:
+      - sourceline: 'deb http://archive.ubuntu.com/ubuntu/ jammy main restricted universe multiverse'
+        key_url: 'http://keyserver.ubuntu.com/pks/lookup?op=get&search=0x871920D1991BC93C'
+      - sourceline: 'deb http://archive.ubuntu.com/ubuntu/ jammy-updates main restricted universe multiverse'
+      - sourceline: 'deb http://archive.ubuntu.com/ubuntu/ jammy-security main restricted universe multiverse'
+    
+    include:
+      - bash
+      - coreutils
+      - xdg-utils
+      - libglib2.0-0
+      - libgtk-3-0
+      - libnotify4
+      - zenity
+      - curl
+      - wget
+      - ca-certificates
+      - fontconfig
+      - fonts-liberation
+      - fonts-noto
+      - libxss1
+      - libgconf-2-4
+      - libxrandr2
+      - libasound2
+      - libpangocairo-1.0-0
+      - libatk1.0-0
+      - libcairo-gobject2
+      - libgtk-3-0
+      - libgdk-pixbuf2.0-0
+      - libxcomposite1
+      - libxcursor1
+      - libxdamage1
+      - libxfixes3
+      - libxinerama1
+      - libxi6
+      - libxrandr2
+      - libxrender1
+      - libxtst6
+      - libxss1
+      - libnss3
+      - libdrm2
+      - libxkbcommon0
+      - libxkbfile1
+      - libsecret-1-0
+      
+    exclude:
+      - adwaita-icon-theme
+      - humanity-icon-theme
+      - ubuntu-mono
+      - hicolor-icon-theme
+      
+  files:
+    include:
+      - usr/bin/teams-desktop-linux
+      - usr/share/applications/teams-desktop-linux.desktop
+      - usr/share/pixmaps/teams-desktop-linux.png
+      - usr/share/mime/packages/teams-desktop-linux.xml
+      - usr/share/bash-completion/completions/teams-desktop-linux
+      - usr/share/doc/teams-desktop-linux/
+      - usr/share/licenses/teams-desktop-linux/
+      
+    exclude:
+      - usr/share/doc/*/copyright
+      - usr/share/man
+      - usr/share/info
+      - usr/share/lintian
+      - usr/share/linda
+      - var/cache
+      - var/log
+      - var/lib/apt
+      - var/lib/dpkg
+      - usr/share/locale/*/LC_MESSAGES/*.mo
+      
+  runtime:
+    arch: x86_64
+    env:
+      PATH: '${APPDIR}/usr/bin:${PATH}'
+      XDG_DATA_DIRS: '${APPDIR}/usr/share:${XDG_DATA_DIRS}'
+      XDG_CONFIG_DIRS: '${APPDIR}/etc/xdg:${XDG_CONFIG_DIRS}'
+      FONTCONFIG_PATH: '${APPDIR}/etc/fonts'
+      FONTCONFIG_FILE: '${APPDIR}/etc/fonts/fonts.conf'
+      
+  before_runtime:
+    - |
+      # Create necessary directories
+      mkdir -p ${APPDIR}/usr/share/applications
+      mkdir -p ${APPDIR}/usr/share/pixmaps
+      mkdir -p ${APPDIR}/usr/share/mime/packages
+      mkdir -p ${APPDIR}/usr/bin
+      
+      # Copy application files
+      cp src/teams-desktop-linux ${APPDIR}/usr/bin/
+      cp assets/icons/teams-desktop-linux.png ${APPDIR}/usr/share/pixmaps/
+      
+      # Create desktop file
+      cat > ${APPDIR}/usr/share/applications/teams-desktop-linux.desktop << 'EOF'
+      [Desktop Entry]
+      Type=Application
+      Version=1.0
+      Name=Teams Desktop Linux
+      GenericName=Microsoft Teams Client
+      Comment=Lightweight Microsoft Teams PWA client
+      Keywords=teams;microsoft;chat;video;collaboration;meeting;
+      Exec=teams-desktop-linux %U
+      Icon=teams-desktop-linux
+      Terminal=false
+      StartupNotify=true
+      StartupWMClass=teams-desktop-linux
+      Categories=Network;Chat;InstantMessaging;Office;VideoConference;
+      MimeType=x-scheme-handler/msteams;x-scheme-handler/ms-teams;
+      EOF
+      
+      # Create MIME type file
+      cat > ${APPDIR}/usr/share/mime/packages/teams-desktop-linux.xml << 'EOF'
+      <?xml version="1.0" encoding="UTF-8"?>
+            <mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+          <mime-type type="x-scheme-handler/msteams">
+              <comment>Microsoft Teams URL</comment>
+              <glob pattern="msteams:*"/>
+          </mime-type>
+          <mime-type type="x-scheme-handler/ms-teams">
+              <comment>Microsoft Teams URL</comment>
+              <glob pattern="ms-teams:*"/>
+          </mime-type>
+      </mime-info>
+      EOF
+      
+      # Set executable permissions
+      chmod +x ${APPDIR}/usr/bin/teams-desktop-linux
+      
+      # Create symlink for alternative name
+      ln -sf teams-desktop-linux ${APPDIR}/usr/bin/teams-linux
+      
+      # Create AppRun script
+      cat > ${APPDIR}/AppRun << 'EOF'
+      #!/bin/bash
+      
+      # AppImage runtime script for Teams Desktop Linux
+      
+      SELF=$(readlink -f "$0")
+      HERE=${SELF%/*}
+      
+      # Set up environment
+      export PATH="${HERE}/usr/bin:${PATH}"
+      export XDG_DATA_DIRS="${HERE}/usr/share:${XDG_DATA_DIRS}"
+      export XDG_CONFIG_DIRS="${HERE}/etc/xdg:${XDG_CONFIG_DIRS}"
+      export LD_LIBRARY_PATH="${HERE}/usr/lib:${LD_LIBRARY_PATH}"
+      
+      # Handle special arguments
+      case "$1" in
+          --appimage-help)
+              echo "Teams Desktop Linux AppImage"
+              echo "Usage: $0 [options] [URL]"
+              echo ""
+              echo "AppImage-specific options:"
+              echo "  --appimage-help     Show this help"
+              echo "  --appimage-version  Show AppImage version"
+              echo "  --appimage-mount    Mount AppImage and show mount point"
+              echo "  --appimage-extract  Extract AppImage contents"
+              echo ""
+              echo "Application options:"
+              exec "${HERE}/usr/bin/teams-desktop-linux" --help
+              ;;
+          --appimage-version)
+              echo "Teams Desktop Linux AppImage v1.0.0"
+              exit 0
+              ;;
+          --appimage-mount)
+              echo "AppImage mounted at: $HERE"
+              exit 0
+              ;;
+          --appimage-extract)
+              echo "Extracting AppImage..."
+              EXTRACT_DIR="./teams-desktop-linux-appimage"
+              mkdir -p "$EXTRACT_DIR"
+              cp -r "${HERE}"/* "$EXTRACT_DIR/"
+              echo "Extracted to: $EXTRACT_DIR"
+              exit 0
+              ;;
+      esac
+      
+      # Update desktop integration if first run
+      if [[ ! -f "$HOME/.local/share/applications/teams-desktop-linux-appimage.desktop" ]]; then
+          mkdir -p "$HOME/.local/share/applications"
+          
+          cat > "$HOME/.local/share/applications/teams-desktop-linux-appimage.desktop" << DESKTOP_EOF
+      [Desktop Entry]
+      Type=Application
+      Version=1.0
+      Name=Teams Desktop Linux (AppImage)
+      GenericName=Microsoft Teams Client
+      Comment=Lightweight Microsoft Teams PWA client (AppImage)
+      Keywords=teams;microsoft;chat;video;collaboration;meeting;
+      Exec=$SELF %U
+      Icon=teams-desktop-linux
+      Terminal=false
+      StartupNotify=true
+      StartupWMClass=teams-desktop-linux
+      Categories=Network;Chat;InstantMessaging;Office;VideoConference;
+      MimeType=x-scheme-handler/msteams;x-scheme-handler/ms-teams;
+      DESKTOP_EOF
+          
+          # Update desktop database if available
+          if command -v update-desktop-database >/dev/null 2>&1; then
+              update-desktop-database "$HOME/.local/share/applications" 2>/dev/null || true
+          fi
+      fi
+      
+      # Launch the application
+      exec "${HERE}/usr/bin/teams-desktop-linux" "$@"
+      EOF
+      
+      chmod +x ${APPDIR}/AppRun
+      
+      # Copy icon to root (required for AppImage)
+      cp assets/icons/teams-desktop-linux.png ${APPDIR}/teams-desktop-linux.png
+      
+      # Copy desktop file to root (required for AppImage)
+      cp ${APPDIR}/usr/share/applications/teams-desktop-linux.desktop ${APPDIR}/teams-desktop-linux.desktop
+      
+      # Create .DirIcon (fallback icon)
+      cp assets/icons/teams-desktop-linux.png ${APPDIR}/.DirIcon
+
+  test:
+    fedora:
+      image: appimagecrafters/tests-env:fedora-35
+      command: ./AppRun --version
+      use_host_x: true
+    
+    debian:
+      image: appimagecrafters/tests-env:debian-stable
+      command: ./AppRun --version
+      use_host_x: true
+    
+    arch:
+      image: appimagecrafters/tests-env:archlinux-latest
+      command: ./AppRun --version
+      use_host_x: true
+    
+    centos:
+      image: appimagecrafters/tests-env:centos-7
+      command: ./AppRun --version
+      use_host_x: true
+    
+    ubuntu:
+      image: appimagecrafters/tests-env:ubuntu-bionic
+      command: ./AppRun --version
+      use_host_x: true
+    
+    opensuse:
+      image: appimagecrafters/tests-env:opensuse-leap
+      command: ./AppRun --version
+      use_host_x: true
+
+AppImage:
+  arch: x86_64
+  file_name: teams-desktop-linux-1.0.0.AppImage
+  
+  # Compression settings
+  comp: xz
+  
+  # Update information (GitHub releases)
+  update-information: "gh-releases-zsync|yourusername|teams-desktop-linux|latest|teams-desktop-linux-*-x86_64.AppImage.zsync"
+  
+  # Sign the AppImage (optional)
+  sign-key: None
+  
+  # Custom mount point
+  mount_point: /tmp/.mount_teams-desktop-linux
+  
+  # Runtime options
+  runtime:
+    path_mappings:
+      # Map host paths to AppImage paths
+      - /usr/share/fonts:/usr/share/fonts:ro
+      - /usr/share/themes:/usr/share/themes:ro
+      - /usr/share/icons:/usr/share/icons:ro
+      - /etc/fonts:/etc/fonts:ro
+      - /etc/ssl:/etc/ssl:ro
+      - /etc/ca-certificates:/etc/ca-certificates:ro
+    
+    # Environment variables
+    env:
+      APPIMAGE_EXTRACT_AND_RUN: "1"
+      FONTCONFIG_PATH: "/etc/fonts"
+      
+    # Preserve environment variables
+    preserve_env:
+      - HOME
+      - USER
+      - DISPLAY
+      - XAUTHORITY
+      - XDG_RUNTIME_DIR
+      - XDG_SESSION_TYPE
+      - XDG_CURRENT_DESKTOP
+      - XDG_SESSION_DESKTOP
+      - LANG
+      - LC_ALL
+      - PULSE_SERVER
+      - PULSE_RUNTIME_PATH
+      - WAYLAND_DISPLAY
+      - QT_QPA_PLATFORM
+      - GDK_BACKEND

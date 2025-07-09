@@ -1,0 +1,27 @@
+Package: teams-desktop-linux
+Version: 1.0.0
+Section: web
+Priority: optional
+Architecture: all
+Depends: chromium-browser | google-chrome-stable | microsoft-edge-stable | brave-browser
+Recommends: zenity | kdialog
+Suggests: libnotify-bin
+Maintainer: Teams Desktop Linux <puneet.dev@myyahoo.com>
+Description: Lightweight Microsoft Teams PWA client
+ A native-feeling Microsoft Teams client for Linux that wraps the Teams PWA
+ with proper desktop integration. Features include system notifications,
+ deep link support, and seamless integration with your desktop environment.
+ .
+ This package provides a lightweight alternative to the official Teams client
+ without the overhead of Electron, resulting in better performance and lower
+ resource usage.
+ .
+ Key features:
+  * Lightning fast startup and operation
+  * Native desktop integration
+  * System notifications support
+  * Deep link handling for Teams URLs
+  * Automatic updates via PWA
+  * Multi-desktop environment support
+Homepage: https://github.com/Algrowrhythm/teams-desktop-linux
+Bugs: https://github.com/Algrowrhythm/teams-desktop-linux/issues

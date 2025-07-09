@@ -1,0 +1,35 @@
+#!/bin/bash
+set -e
+
+case "$1" in
+    remove|purge)
+        # Update desktop database
+        if command -v update-desktop-database >/dev/null 2>&1; then
+            update-desktop-database /usr/share/applications/ 2>/dev/null || true
+        fi
+        
+        # Update icon cache
+        if command -v gtk-update-icon-cache >/dev/null 2>&1; then
+            gtk-update-icon-cache -f /usr/share/pixmaps/ 2>/dev/null || true
+        fi
+        
+        # Update MIME database
+        if command -v update-mime-database >/dev/null 2>&1; then
+            update-mime-database /usr/share/mime/ 2>/dev/null || true
+        fi
+        
+        # Remove symlinks
+        rm -f /usr/bin/teams-linux
+        
+        # Remove user data on purge
+        if [[ "$1" = "purge" ]]; then
+            echo "Removing user data directories..."
+            find /home -name ".local" -type d -exec rm -rf {}/share/teams-desktop-linux \; 2>/dev/null || true
+            find /root -name ".local" -type d -exec rm -rf {}/share/teams-desktop-linux \; 2>/dev/null || true
+        fi
+        
+        echo "Teams Desktop Linux removed successfully."
+        ;;
+esac
+
+exit 0

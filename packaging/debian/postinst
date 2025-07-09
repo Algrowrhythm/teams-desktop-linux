@@ -1,0 +1,41 @@
+#!/bin/bash
+set -e
+
+# Update desktop database
+if command -v update-desktop-database >/dev/null 2>&1; then
+    update-desktop-database /usr/share/applications/ 2>/dev/null || true
+fi
+
+# Update icon cache
+if command -v gtk-update-icon-cache >/dev/null 2>&1; then
+    gtk-update-icon-cache -f /usr/share/pixmaps/ 2>/dev/null || true
+fi
+
+# Update MIME database
+if command -v update-mime-database >/dev/null 2>&1; then
+    update-mime-database /usr/share/mime/ 2>/dev/null || true
+fi
+
+# Register URL handlers
+if command -v xdg-mime >/dev/null 2>&1; then
+    xdg-mime default teams-desktop-linux.desktop x-scheme-handler/msteams 2>/dev/null || true
+    xdg-mime default teams-desktop-linux.desktop x-scheme-handler/ms-teams 2>/dev/null || true
+fi
+
+# Create symlinks for alternative names
+if [[ ! -L /usr/bin/teams-linux ]]; then
+    ln -sf /usr/bin/teams-desktop-linux /usr/bin/teams-linux
+fi
+
+echo "✅ Teams Desktop Linux installed successfully!"
+echo ""
+echo "🚀 Launch from your applications menu or run:"
+echo "   teams-desktop-linux"
+echo ""
+echo "📋 For help and options:"
+echo "   teams-desktop-linux --help"
+echo ""
+echo "🐛 Report issues at:"
+echo "   https://github.com/Algrowrhythm/teams-desktop-linux/issues"
+
+exit 0
